@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Admin Login</h2>
+  <form id="loginForm">
+    <input type="text" id="username" placeholder="Username" required><br>
+    <input type="password" id="password" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <div id="dashboard" style="display:none;">
+    <h2>Admin Dashboard</h2>
+
+    <h3>All Donors</h3>
+    <table border="1" cellpadding="10">
+      <thead>
+        <tr>
+          <th>Name</th><th>Blood Group</th><th>Age</th><th>City</th><th>Phone</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="donorTable"></tbody>
+    </table>
+
+    <h3>All Requests</h3>
+    <table border="1" cellpadding="10">
+      <thead>
+        <tr>
+          <th>Patient</th><th>Hospital</th><th>Blood Group</th><th>City</th><th>Phone</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="requestTable"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let token = "";
+
+    // Login Form
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (data.token) {
+        token = data.token;
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        loadData();
+      } else {
+        alert("Login Failed!");
+      }
+    });
+
+    // Load Data
+    async function loadData() {
+      // Donors
+      const donorRes = await fetch("http://localhost:5000/api/admin/donors", {
+        headers: { "Authorization": token }
+      });
+      const donors = await donorRes.json();
+      const donorTable = document.getElementById("donorTable");
+      donorTable.innerHTML = "";
+      donors.forEach(d => {
+        donorTable.innerHTML += `
+          <tr>
+            <td>${d.name}</td>
+            <td>${d.bloodGroup}</td>
+            <td>${d.age}</td>
+            <td>${d.city}</td>
+            <td>${d.phone}</td>
+            <td><button onclick="deleteDonor('${d._id}')">Delete</button></td>
+          </tr>
+        `;
+      });
+
+      // Requests
+      const reqRes = await fetch("http://localhost:5000/api/admin/requests", {
+        headers: { "Authorization": token }
+      });
+      const requests = await reqRes.json();
+      const requestTable = document.getElementById("requestTable");
+      requestTable.innerHTML = "";
+      requests.forEach(r => {
+        requestTable.innerHTML += `
+          <tr>
+            <td>${r.patientName}</td>
+            <td>${r.hospital}</td>
+            <td>${r.bloodGroup}</td>
+            <td>${r.city}</td>
+            <td>${r.phone}</td>
+            <td><button onclick="deleteRequest('${r._id}')">Delete</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    // Delete Donor
+    async function deleteDonor(id) {
+      await fetch(`http://localhost:5000/api/admin/donor/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+      });
+      loadData();
+    }
+
+    // Delete Request
+    async function deleteRequest(id) {
+      await fetch(`http://localhost:5000/api/admin/request/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+      });
+      loadData();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donor Directory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Search Donors</h2>
+
+  <form id="searchForm">
+    <select id="bloodGroup">
+      <option value="">Select Blood Group</option>
+      <option>A+</option><option>A-</option>
+      <option>B+</option><option>B-</option>
+      <option>O+</option><option>O-</option>
+      <option>AB+</option><option>AB-</option>
+    </select>
+
+    <input type="text" id="city" placeholder="Enter City">
+
+    <button type="submit">Search</button>
+  </form>
+
+  <h3>Available Donors</h3>
+  <table border="1" cellpadding="10" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Blood Group</th>
+        <th>Age</th>
+        <th>City</th>
+        <th>Phone</th>
+      </tr>
+    </thead>
+    <tbody id="donorList"></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById("searchForm");
+    const donorList = document.getElementById("donorList");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const bloodGroup = document.getElementById("bloodGroup").value;
+      const city = document.getElementById("city").value;
+
+      let url = "http://localhost:5000/api/donors?";
+      if (bloodGroup) url += `bloodGroup=${bloodGroup}&`;
+      if (city) url += `city=${city}`;
+
+      const res = await fetch(url);
+      const donors = await res.json();
+
+      donorList.innerHTML = "";
+      if (donors.length === 0) {
+        donorList.innerHTML = `<tr><td colspan="5">No donors found</td></tr>`;
+      } else {
+        donors.forEach(d => {
+          donorList.innerHTML += `
+            <tr>
+              <td>${d.name}</td>
+              <td>${d.bloodGroup}</td>
+              <td>${d.age}</td>
+              <td>${d.city}</td>
+              <td>${d.phone}</td>
+            </tr>
+          `;
+        });
+      }
+    });
+  </script>
+</body>
+</html>
